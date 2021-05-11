@@ -127,7 +127,7 @@ namespace App\Cache {
 
 Interfaces have a different behavior to classes and traits due to backward compability reasons.
 
-An interfaces is allowed to extend a sealed interface that does not permit it, however, a class cannot implement the newly introduced interfaces unless it extends one of the permitted classes, or implements one of the permitted interfaces.
+An interfaces is allowed to extend a sealed interface that does not permit it, however, a class cannot implement the newly introduced interface unless it extends one of the permitted classes, or implements one of the permitted interfaces.
 
 This is the same as the current behavior for `Throwable` and `DateTimeInterface`.
 
@@ -141,9 +141,9 @@ class Linux implements UnixLikeOperatingSystem { ... } // ok, permitted to imple
 class MacOS implements UnixLikeOperatingSystem { ... } // ok, permitted to implement `OperatingSystem`
 class Windows implements OperatingSystem { ... } // ok, permitted to implement `OperatingSystem`
 
-class Ubuntu extends Linux implements UnixLikeOperatingSystem { ... } // ok, Linux is permitted to implement `OperatingSystem`, and `Ubuntu` is a sub-class of `Linux`
+class WindowsSubsystemLinux extends Windows implements UnixLikeOperatingSystem { ... } // ok, Windows is permitted to implement `OperatingSystem`, and `WindowsSubsystemLinux` is a sub-class of `Windows`
 
-class DummyOS implements UnixLikeOperatingSystem { ... } // Fatam error: Class DummyOS cannot implement sealed interface OperatingSystem implicitly.
+class DummyOS implements UnixLikeOperatingSystem { ... } // Fatal error: Class DummyOS cannot implement sealed interface OperatingSystem implicitly.
 ```
 
 This behavior doesn't not break the promise sealing provides, as any instance of `OperatingSystem` will be either `Linux`, `MacOS`, `Windows`, or a sub-type of these three.
