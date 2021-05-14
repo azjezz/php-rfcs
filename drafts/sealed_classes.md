@@ -34,11 +34,11 @@ and a new `permits` clause that takes place after `extends`, and
 ``` php
 sealed class Shape permits Circle, Square, Rectangle {}
 
-final class Circle extends Shape {} // ok
-final class Square extends Shape {} // ok
-final class Rectangle extends Shape {} // ok
+class Circle extends Shape {} // ok
+class Square extends Shape {} // ok
+class Rectangle extends Shape {} // ok
 
-final class Triangle extends Shape {} // Fatal error: Class Triangle cannot extend sealed class Shape.
+class Triangle extends Shape {} // Fatal error: Class Triangle cannot extend sealed class Shape.
 ```
 
 An interface that is sealed can be implemented directly only by the
@@ -48,25 +48,31 @@ classes named in the `permits` clause.
 namespace Psl\Result {
     sealed interface ResultInterface permits Success, Failure { ... }
 
-    final class Success implements ResultInterface { ... }
-    final class Failure implements ResultInterface { ... }
-    
+    class Success implements ResultInterface { ... }
+    class Failure implements ResultInterface { ... }
+
     function wrap(callable $callback): ResultInterface { ... }
-    
+
     function unwrap(ResultInterface $result): mixed
     {    
-        return match($result::class) {
-            Result\Success::class => $result->value(),
-            Result\Failure::class => throw $result->error(),
+        return match(true) {
+            $result instanceof Success => $result->value(),
+            $result instanceof Failures => throw $result->error(),
         }; // no need for default, it's not possible.
     }
 }
 
 namespace App {
     use Psl\Result;
-    
+
+    // ok
+    class MySuccess implements Result\Success { ... }
+
+    // ok
+    class MyFailure implements Result\Failure { ... }
+
     // Fatal error: Class App\Maybe cannot implement sealed interface Psl\Result\ResultInterface.
-    final class Maybe implements Result\ResultInterface {}
+    class Maybe implements Result\ResultInterface {}
 }
 ```
 
@@ -116,6 +122,31 @@ namespace App\Cache {
     }
 }
 ```
+
+## Interfaces behavior
+
+Interfaces have a different behavior to classes and traits due to backward compability reasons.
+
+An interfaces is allowed to extend a sealed interface that does not permit it, however, a class cannot implement the newly introduced interface unless it extends one of the permitted classes, or implements one of the permitted interfaces.
+
+This is the same as the current behavior for `Throwable` and `DateTimeInterface`.
+
+Example:
+```php
+sealed interface OperatingSystem permits Linux, MacOS, Windows { ... }
+
+interface UnixLikeOperatingSystem extends OperatingSystem {} // ok
+
+class Linux implements UnixLikeOperatingSystem { ... } // ok, permitted to implement `OperatingSystem`
+class MacOS implements UnixLikeOperatingSystem { ... } // ok, permitted to implement `OperatingSystem`
+class Windows implements OperatingSystem { ... } // ok, permitted to implement `OperatingSystem`
+
+class WindowsSubsystemLinux extends Windows implements UnixLikeOperatingSystem { ... } // ok, Windows is permitted to implement `OperatingSystem`, and `WindowsSubsystemLinux` is a sub-class of `Windows`
+
+class DummyOS implements UnixLikeOperatingSystem { ... } // Fatal error: Class DummyOS cannot implement sealed interface OperatingSystem implicitly.
+```
+
+This behavior doesn't not break the promise sealing provides, as any instance of `OperatingSystem` will be either `Linux`, `MacOS`, `Windows`, or a sub-type of these three.
 
 ## Syntax
 
